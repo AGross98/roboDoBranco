@@ -1,0 +1,16 @@
+{
+  "name": "tipminer-blaze-bot",
+  "version": "1.0.0",
+  "description": "Robô de monitoramento Blaze Double usando Puppeteer",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Anderson",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^22.0.0",
+    "node-fetch": "^2.6.9"
+  }
+}
