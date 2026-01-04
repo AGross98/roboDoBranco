@@ -1,5 +1,5 @@
-import puppeteer from "puppeteer";
-import fetch from "node-fetch";
+const puppeteer = require("puppeteer");
+const fetch = require("node-fetch");
 
 let lastProcessedDate = null;
 let monitoring = false;
@@ -13,12 +13,11 @@ async function main() {
   const page = await browser.newPage();
 
   await openTargetPage(page);
-
   startMonitor(page);
 }
 
 /**
- * Garante que estamos na página correta (não no login)
+ * Garante que estamos na página correta
  */
 async function openTargetPage(page) {
   await page.goto(
@@ -30,19 +29,18 @@ async function openTargetPage(page) {
 }
 
 /**
- * Verifica se a sessão caiu e recupera automaticamente
+ * Verifica se a sessão caiu
  */
 async function ensurePageAlive(page) {
   const url = page.url();
 
-  if (url.includes("/login")) {
-    console.log("⚠️ Sessão expirada. Recuperando...");
+  if (url.indexOf("/login") !== -1) {
+    console.log("Sessão expirada. Recuperando...");
 
-    lastProcessedDate = null; // evita falso duplicado
-
+    lastProcessedDate = null;
     await openTargetPage(page);
 
-    console.log("✅ Sessão restaurada.");
+    console.log("Sessão restaurada.");
     return false;
   }
 
@@ -53,21 +51,20 @@ async function ensurePageAlive(page) {
  * Extrai o último resultado
  */
 async function getLatestResult(page) {
-  return await page.evaluate(() => {
+  return await page.evaluate(function () {
     const firstCell = document.querySelector("button.cell");
     if (!firstCell) return null;
 
-    const number = firstCell.querySelector(".cell__result")?.innerText.trim();
-    const time = firstCell.querySelector(".cell__date")?.innerText.trim();
-    const tooltip = firstCell
-      .closest(".group")
-      ?.querySelector(".cell__tooltip")
-      ?.innerText.trim();
+    const numberEl = firstCell.querySelector(".cell__result");
+    const timeEl = firstCell.querySelector(".cell__date");
+    const tooltipEl = firstCell.closest(".group")
+      ? firstCell.closest(".group").querySelector(".cell__tooltip")
+      : null;
 
     return {
-      number: Number(number),
-      time,
-      fullDate: tooltip
+      number: numberEl ? Number(numberEl.innerText.trim()) : null,
+      time: timeEl ? timeEl.innerText.trim() : null,
+      fullDate: tooltipEl ? tooltipEl.innerText.trim() : null
     };
   });
 }
@@ -79,7 +76,7 @@ function startMonitor(page) {
   if (monitoring) return;
   monitoring = true;
 
-  setInterval(async () => {
+  setInterval(async function () {
     try {
       const alive = await ensurePageAlive(page);
       if (!alive) return;
@@ -90,13 +87,13 @@ function startMonitor(page) {
       if (result.fullDate === lastProcessedDate) return;
       lastProcessedDate = result.fullDate;
 
-      console.log("🎯 Novo resultado:", result);
+      console.log("Novo resultado:", result);
 
-      if (result.number === 0) {
-        const minute = Number(result.time.split(":")[1]);
+      if (result.number === 0 && result.time) {
+        const parts = result.time.split(":");
+        const minute = Number(parts[1]);
         await send("Blaze", minute);
       }
-
     } catch (err) {
       console.error("Erro no monitor:", err);
     }
@@ -106,8 +103,8 @@ function startMonitor(page) {
 /**
  * Envia o branco
  */
-async function send(from, minut) {
-  console.log("📤 Enviando branco:", minut, from);
+async function send(from, minute) {
+  console.log("Enviando branco:", minute, from);
 
   try {
     const url =
@@ -117,16 +114,15 @@ async function send(from, minut) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        minuto: minut,
+        minuto: minute,
         plataforma: from
       })
     });
 
     const dados = await resposta.json();
-    console.log("✅ Resposta:", dados);
-
+    console.log("Resposta:", dados);
   } catch (erro) {
-    console.error("❌ Erro ao enviar:", erro);
+    console.error("Erro ao enviar:", erro);
   }
 }
 
