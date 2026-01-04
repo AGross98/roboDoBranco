@@ -5,32 +5,46 @@ let lastProcessedDate = null;
 let monitoring = false;
 
 async function main() {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
-  });
+  let browser;
 
-  const page = await browser.newPage();
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      executablePath: "/usr/bin/chromium",
 
-  await openTargetPage(page);
-  startMonitor(page);
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+      ]
+    });
+
+    const page = await browser.newPage();
+
+    await openTargetPage(page);
+    startMonitor(page);
+
+  } catch (err) {
+    console.error("Erro ao iniciar o robô:", err);
+
+    if (browser) {
+      await browser.close();
+    }
+
+    process.exit(1);
+  }
 }
 
-/**
- * Garante que estamos na página correta
- */
 async function openTargetPage(page) {
   await page.goto(
     "https://www.tipminer.com/br/historico/blaze/double",
-    { waitUntil: "networkidle2" }
+    { waitUntil: "networkidle2", timeout: 60000 }
   );
 
   await page.waitForSelector("button.cell", { timeout: 15000 });
 }
 
-/**
- * Verifica se a sessão caiu
- */
 async function ensurePageAlive(page) {
   const url = page.url();
 
@@ -47,9 +61,6 @@ async function ensurePageAlive(page) {
   return true;
 }
 
-/**
- * Extrai o último resultado
- */
 async function getLatestResult(page) {
   return await page.evaluate(function () {
     const firstCell = document.querySelector("button.cell");
@@ -57,9 +68,12 @@ async function getLatestResult(page) {
 
     const numberEl = firstCell.querySelector(".cell__result");
     const timeEl = firstCell.querySelector(".cell__date");
-    const tooltipEl = firstCell.closest(".group")
-      ? firstCell.closest(".group").querySelector(".cell__tooltip")
-      : null;
+
+    let tooltipEl = null;
+    const groupEl = firstCell.closest(".group");
+    if (groupEl) {
+      tooltipEl = groupEl.querySelector(".cell__tooltip");
+    }
 
     return {
       number: numberEl ? Number(numberEl.innerText.trim()) : null,
@@ -69,9 +83,6 @@ async function getLatestResult(page) {
   });
 }
 
-/**
- * Loop principal
- */
 function startMonitor(page) {
   if (monitoring) return;
   monitoring = true;
@@ -94,15 +105,13 @@ function startMonitor(page) {
         const minute = Number(parts[1]);
         await send("Blaze", minute);
       }
+
     } catch (err) {
       console.error("Erro no monitor:", err);
     }
   }, 3000);
 }
 
-/**
- * Envia o branco
- */
 async function send(from, minute) {
   console.log("Enviando branco:", minute, from);
 
@@ -121,6 +130,7 @@ async function send(from, minute) {
 
     const dados = await resposta.json();
     console.log("Resposta:", dados);
+
   } catch (erro) {
     console.error("Erro ao enviar:", erro);
   }
