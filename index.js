@@ -39,7 +39,7 @@ async function main() {
 async function openTargetPage(page) {
   await page.goto(
     "https://www.tipminer.com/br/historico/blaze/double",
-    { waitUntil: "networkidle2", timeout: 60000 }
+    { waitUntil: "networkidle2", timeout: 120000 }
   );
 
   await page.waitForSelector("button.cell", { timeout: 15000 });
