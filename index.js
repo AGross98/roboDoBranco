@@ -1,6 +1,6 @@
 const { fetchLatest } = require("./blaze");
 const { process } = require("./monitor");
-const { sendWhite } = require("./sender");
+const { sendV1, sendV2 } = require("./sender");
 const health = require("./health");
 
 health.start();
@@ -16,7 +16,13 @@ async function loop() {
 
     if (result.roll === 0) {
       const minute = new Date(result.createdAt).getUTCMinutes();
-      await sendWhite(minute);
+
+      await sendV1("https://oirjpetwqekfpvrmdsyh.supabase.co/functions/v1/registrar-branco", minute)
+      await sendV2(
+        "https://tohldyqvxbrmypxtnlpr.supabase.co/functions/v1/registrar-branco",
+        minute,
+      );
+
       console.log("⚪ Branco enviado!");
     }
 
@@ -26,4 +32,4 @@ async function loop() {
   }
 }
 
-setInterval(loop, 3000);
+setInterval(loop, 15000);
