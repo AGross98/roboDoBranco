@@ -25,9 +25,9 @@ async function sendV1(minute, platform = "Blaze") {
 }
 
 
-async function sendV2(url, minute, platform = "Blaze") {
+async function sendV2( minute, platform = "Blaze") {
   console.log(minute)
-  
+  const url = "https://tohldyqvxbrmypxtnlpr.supabase.co/functions/v1/registrar-branco"
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

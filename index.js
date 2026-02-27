@@ -17,11 +17,8 @@ async function loop() {
     if (result.roll === 0) {
       const minute = new Date(result.createdAt).getUTCMinutes();
 
-      await sendV1("https://oirjpetwqekfpvrmdsyh.supabase.co/functions/v1/registrar-branco", minute)
-      await sendV2(
-        "https://tohldyqvxbrmypxtnlpr.supabase.co/functions/v1/registrar-branco",
-        minute,
-      );
+      await sendV1(minute);
+      await sendV2(minute);
 
       console.log("⚪ Branco enviado!");
     }
